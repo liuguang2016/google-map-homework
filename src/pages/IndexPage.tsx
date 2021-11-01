@@ -1,7 +1,7 @@
 import React from "react";
-import App from "../App";
+import MapLayout from "../components/MapLayout";
 const IndexPage = () => {
-  return <App />;
+  return <MapLayout />;
 };
 
 export default IndexPage;

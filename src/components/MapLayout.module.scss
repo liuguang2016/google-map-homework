@@ -1,0 +1,12 @@
+.wrapper{
+  display: flex;
+  height: 100vh;
+  .left{
+    display: flex;
+    flex: 1;
+  }
+  .right{
+    width: 20%;
+    border-left: 8px solid gainsboro;
+  }
+}
