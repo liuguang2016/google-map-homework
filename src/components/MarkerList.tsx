@@ -1,12 +1,16 @@
-import { MapHooks } from "./GoogleMap";
 import styles from "./MarkerList.module.scss";
 
-const MarkerList = ({ googleMap }: { googleMap: MapHooks }) => {
-  const { markerList, setRandomMarkers } = googleMap;
+type Props = {
+  markerList: google.maps.LatLng[];
+  setMarkerList: (param: google.maps.LatLng[]) => void;
+  setCenter: (param: google.maps.LatLngLiteral) => void;
+  setRandomMarkers: () => void;
+};
+const MarkerList = ({ setRandomMarkers, markerList, setCenter, setMarkerList }: Props) => {
   const handleSetList = () => {
     setRandomMarkers();
   };
-  
+
   return (
     <div className={styles.listBox}>
       <div className={styles.headerBox}>
