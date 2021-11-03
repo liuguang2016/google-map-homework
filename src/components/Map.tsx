@@ -3,10 +3,11 @@ import { createCustomEqual } from "fast-equals";
 interface MapProps extends google.maps.MapOptions {
   style: { [key: string]: string };
   onClick?: (e: google.maps.MapMouseEvent) => void;
+  onRightClick?: () => void;
   onIdle?: (map: google.maps.Map) => void;
 }
 
-const Map: React.FC<MapProps> = ({ onClick, onIdle, children, style, ...options }) => {
+const Map: React.FC<MapProps> = ({ onClick, onIdle, onRightClick, children, style, ...options }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [map, setMap] = React.useState<google.maps.Map>();
 
@@ -24,7 +25,7 @@ const Map: React.FC<MapProps> = ({ onClick, onIdle, children, style, ...options 
 
   React.useEffect(() => {
     if (map) {
-      ["click", "idle"].forEach((eventName) => google.maps.event.clearListeners(map, eventName));
+      ["click", "idle", "mousedown"].forEach((eventName) => google.maps.event.clearListeners(map, eventName));
 
       if (onClick) {
         map.addListener("click", onClick);
@@ -33,8 +34,16 @@ const Map: React.FC<MapProps> = ({ onClick, onIdle, children, style, ...options 
       if (onIdle) {
         map.addListener("idle", () => onIdle(map));
       }
+
+      if (onRightClick) {
+        map.addListener("mousedown", (e: any) => {
+          if (e.domEvent.button === 2) {
+            onRightClick();
+          }
+        });
+      }
     }
-  }, [map, onClick, onIdle]);
+  }, [map, onClick, onIdle, onRightClick]);
 
   return (
     <>

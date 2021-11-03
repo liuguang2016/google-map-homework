@@ -26,9 +26,13 @@ const GoogleMap = ({ markerList, center, setMarkerList, setCenter }: Props) => {
     setCenter(m.getCenter()!.toJSON());
   };
 
+  const drawPolygon = () => {
+    console.log("----------drawPolygon");
+  };
+
   return (
     <Wrapper apiKey={""} render={render}>
-      <Map center={center} onClick={onClick} onIdle={onIdle} zoom={zoom} style={{ flexGrow: "1", height: "100%" }}>
+      <Map center={center} onClick={onClick} onIdle={onIdle} onRightClick={drawPolygon} zoom={zoom} style={{ flexGrow: "1", height: "100%" }}>
         {markerList.map((latLng, i) => (
           <Marker key={i} position={latLng} />
         ))}
