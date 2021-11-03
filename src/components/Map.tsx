@@ -3,7 +3,7 @@ import { createCustomEqual } from "fast-equals";
 interface MapProps extends google.maps.MapOptions {
   style: { [key: string]: string };
   onClick?: (e: google.maps.MapMouseEvent) => void;
-  onRightClick?: () => void;
+  onRightClick?: ({ map }: { map: google.maps.Map }) => void;
   onIdle?: (map: google.maps.Map) => void;
 }
 
@@ -38,7 +38,7 @@ const Map: React.FC<MapProps> = ({ onClick, onIdle, onRightClick, children, styl
       if (onRightClick) {
         map.addListener("mousedown", (e: any) => {
           if (e.domEvent.button === 2) {
-            onRightClick();
+            onRightClick({ map });
           }
         });
       }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { Map, Marker } from "./Map";
+import { grahamScan2 } from "@thi.ng/geom-hull";
 
 type Props = {
   markerList: google.maps.LatLng[];
@@ -26,8 +27,26 @@ const GoogleMap = ({ markerList, center, setMarkerList, setCenter }: Props) => {
     setCenter(m.getCenter()!.toJSON());
   };
 
-  const drawPolygon = () => {
-    console.log("----------drawPolygon");
+  const drawPolygon = ({map}:{map:google.maps.Map}) => {
+    const transformData = markerList.map(item => {
+      const { lat, lng } = item.toJSON();
+      return [lat, lng];
+    });
+    const convexHullData = grahamScan2(transformData) as number[][];
+    if (convexHullData.length > 3) {
+      const bermudaTriangle = new google.maps.Polygon({
+        paths: convexHullData.map(item => {
+          const [lat, lng] = item;
+          return {lat, lng}
+        }),
+        strokeColor: "#FF0000",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillOpacity: 0.35,
+      });
+      bermudaTriangle.setMap(map);
+      setMarkerList([]);
+    }
   };
 
   return (
