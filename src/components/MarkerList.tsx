@@ -1,24 +1,24 @@
-import { useState } from "react";
+import { MapHooks } from "./GoogleMap";
 import styles from "./MarkerList.module.scss";
 
-const MarkerList = () => {
-  const [list, setList] = useState<any[]>([]);
+const MarkerList = ({ googleMap }: { googleMap: MapHooks }) => {
+  const { markerList, setRandomMarkers } = googleMap;
   const handleSetList = () => {
-    const result = [...Array(5000)];
-    setList(result);
+    setRandomMarkers();
   };
+  
   return (
     <div className={styles.listBox}>
       <div className={styles.headerBox}>
-        <button
-          onClick={handleSetList}
-        >
-          获取Markers
-        </button>
+        <button onClick={handleSetList}>获取Markers</button>
       </div>
       <div className={styles.contextBox}>
-        {list.map((item, idx) => {
-          return <div key={idx} className={styles.card}>{idx}</div>;
+        {markerList.map((item, idx) => {
+          return (
+            <div key={idx} className={styles.card}>
+              {idx}
+            </div>
+          );
         })}
       </div>
     </div>

@@ -4,13 +4,14 @@ import GoogleMap from "./GoogleMap";
 import MarkerList from "./MarkerList";
 
 const MapLayout = () => {
+  const [map] = GoogleMap.useMap()
   return (
     <div className={styles.wrapper}>
       <div className={styles.left}>
-        <GoogleMap />
+        <GoogleMap map={map}/>
       </div>
       <div className={styles.right}>
-        <MarkerList />
+        {/* <MarkerList googleMap={map}/> */}
       </div>
     </div>
   );
