@@ -1,6 +1,7 @@
 import React from "react";
 import styles from "./MapLayout.module.scss";
 import GoogleMap from "./GoogleMap";
+import MarkerList from "./MarkerList";
 
 const MapLayout = () => {
   return (
@@ -8,7 +9,9 @@ const MapLayout = () => {
       <div className={styles.left}>
         <GoogleMap />
       </div>
-      <div className={styles.right}>2</div>
+      <div className={styles.right}>
+        <MarkerList />
+      </div>
     </div>
   );
 };

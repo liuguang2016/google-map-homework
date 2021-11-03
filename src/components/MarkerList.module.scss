@@ -1,0 +1,25 @@
+.listBox{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  .headerBox{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 50px;
+    padding: 0 20px;
+    background-color: azure;
+  }
+  .contextBox{
+    flex: 1;
+    overflow-y: auto;
+    .card{
+      height: 50px;
+      border-bottom: 1px solid grey;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+  }
+}
