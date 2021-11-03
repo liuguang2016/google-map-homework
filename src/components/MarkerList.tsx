@@ -11,6 +11,11 @@ const MarkerList = ({ setRandomMarkers, markerList, setCenter, setMarkerList }: 
     setRandomMarkers();
   };
 
+  const handleCenter = (item: google.maps.LatLng) => {
+    const { lat, lng } = item.toJSON();
+    setCenter({ lat, lng });
+  };
+
   return (
     <div className={styles.listBox}>
       <div className={styles.headerBox}>
@@ -19,7 +24,13 @@ const MarkerList = ({ setRandomMarkers, markerList, setCenter, setMarkerList }: 
       <div className={styles.contextBox}>
         {markerList.map((item, idx) => {
           return (
-            <div key={idx} className={styles.card}>
+            <div
+              key={idx}
+              className={styles.card}
+              onClick={() => {
+                handleCenter(item);
+              }}
+            >
               {idx}
             </div>
           );
