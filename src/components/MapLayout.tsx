@@ -11,10 +11,10 @@ const MapLayout = () => {
   const [markerList, setMarkerList] = useState<google.maps.LatLng[]>([]);
 
   const createLatLng = () => {
-    const latMax = 30.779267721150493;
-    const latMin = 30.513927560368842;
-    const lngMax = 103.72384789869619;
-    const lngMin = 104.43151251020423;
+    const latMax = initMarker.lat + Math.random();
+    const latMin = initMarker.lat - Math.random();
+    const lngMax = initMarker.lng + Math.random();
+    const lngMin = initMarker.lng - Math.random();
     return { lat: Math.random() * (latMax - latMin) + latMin, lng: Math.random() * (lngMax - lngMin) + lngMin };
   };
 
