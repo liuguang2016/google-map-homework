@@ -1,188 +1,127 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createCustomEqual } from "fast-equals";
 import styles from "./Map.module.scss";
-
-interface IMap {
-  mapType?: google.maps.MapTypeId;
-  mapTypeControl?: boolean;
-  position?: { x: number; y: number };
+interface MapProps extends google.maps.MapOptions {
+  style: { [key: string]: string };
+  onClick?: (e: google.maps.MapMouseEvent) => void;
+  onRightClick?: ({ map }: { map: google.maps.Map }) => void;
+  onIdle?: (map: google.maps.Map) => void;
+  onFillColor?: () => void;
 }
 
-interface IMarker {
-  address: string;
-  latitude: number;
-  longitude: number;
-}
-
-type GoogleLatLng = google.maps.LatLng;
-type GoogleMap = google.maps.Map;
-type GoogleMarker = google.maps.Marker;
-type GooglePolyline = google.maps.Polyline;
-
-const Map: React.FC<IMap> = ({
-  mapType = google.maps.MapTypeId.ROADMAP,
-  mapTypeControl = false,
-  position = { x: 30.659856258462426, y: 104.0656670909727 },
-}) => {
+const Map: React.FC<MapProps> = ({ onClick, onIdle, onRightClick, onFillColor, children, style, ...options }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<GoogleMap>();
-  const [marker, setMarker] = useState<IMarker>();
-  const [homeMarker, setHomeMarker] = useState<GoogleMarker>();
-  const [googleMarkers, setGoogleMarkers] = useState<GoogleMarker[]>([]);
-  const [listenerIdArray, setListenerIdArray] = useState<any[]>([]);
-  const [LastLineHook, setLastLineHook] = useState<GooglePolyline>();
-  const initLocation = new google.maps.LatLng(position.x,position.y);
+  const [map, setMap] = useState<google.maps.Map>();
 
-  const startMap = (): void => {
-    if (!map) {
-      initMap(12, initLocation);
-    } else {
-      setHomeMarker(addHomeMarker(initLocation));
-    }
-  };
   useEffect(() => {
-    startMap();
+    if (ref.current && !map) {
+      setMap(new window.google.maps.Map(ref.current, {}));
+    }
+  }, [ref, map]);
+
+  useDeepCompareEffectForMaps(() => {
+    if (map) {
+      map.setOptions(options);
+    }
+  }, [map, options]);
+
+  useEffect(() => {
+    if (map) {
+      ["click", "idle", "mousedown"].forEach((eventName) => google.maps.event.clearListeners(map, eventName));
+
+      if (onClick) {
+        map.addListener("click", onClick);
+      }
+
+      if (onIdle) {
+        map.addListener("idle", () => onIdle(map));
+      }
+
+      if (onRightClick) {
+        map.addListener("mousedown", (e: any) => {
+          if (e.domEvent.button === 2) {
+            onRightClick({ map });
+          }
+        });
+      }
+    }
+  }, [map, onClick, onIdle, onRightClick]);
+
+  useEffect(() => {
+    if (map) {
+      const fillButton = document.createElement("button");
+      fillButton.textContent = "Fill Color";
+      fillButton.classList.add(styles.customButton);
+      fillButton.addEventListener("click", () => {
+        onFillColor && onFillColor();
+      });
+      map.controls[google.maps.ControlPosition.TOP_RIGHT].push(fillButton);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map]);
 
-  const initEventListener = (): void => {
-    if (map) {
-      google.maps.event.addListener(map, "click", function (e: any) {
-        coordinateToAddress(e.latLng);
-      });
-    }
-  };
-  useEffect(initEventListener, [map]);
-
-  const coordinateToAddress = async (coordinate: GoogleLatLng) => {
-    const geocoder = new google.maps.Geocoder();
-    await geocoder.geocode({ location: coordinate }, (results, status) => {
-      if (status === "OK") {
-        setMarker({
-          address: results ? results[0].formatted_address : "",
-          latitude: coordinate.lat(),
-          longitude: coordinate.lng(),
-        });
-      }
-    });
-  };
-
-  useEffect(() => {
-    if (marker) {
-      addMarker(new google.maps.LatLng(marker.latitude, marker.longitude));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [marker]);
-
-  const addMarker = (location: GoogleLatLng): void => {
-    const marker: GoogleMarker = new google.maps.Marker({
-      position: location,
-      map: map,
-      icon: getIconAttributes("#000000"),
-    });
-
-    setGoogleMarkers((googleMarkers) => [...googleMarkers, marker]);
-
-    const listenerId = marker.addListener("click", () => {
-      const homePos = homeMarker?.getPosition();
-      const markerPos = marker.getPosition();
-      if (homePos && markerPos) {
-        if (LastLineHook) {
-          LastLineHook.setMap(null);
-        }
-
-        const line = new google.maps.Polyline({
-          path: [
-            { lat: homePos.lat(), lng: homePos.lng() },
-            { lat: markerPos.lat(), lng: markerPos.lng() },
-          ],
-          icons: [
-            {
-              icon: {
-                path: google.maps.SymbolPath.FORWARD_OPEN_ARROW,
-              },
-              offset: "100%",
-            },
-          ],
-          map: map,
-        });
-
-        setLastLineHook(line);
-      }
-    });
-
-    setListenerIdArray((listenerIdArray) => [...listenerIdArray, listenerId]);
-  };
-
-  useEffect(() => {
-    listenerIdArray.forEach((listenerId) => {
-      google.maps.event.removeListener(listenerId);
-    });
-
-    setListenerIdArray([]);
-    setGoogleMarkers([]);
-    googleMarkers.forEach((googleMarker) => {
-      const markerPosition = googleMarker.getPosition();
-      if (markerPosition) {
-        addMarker(markerPosition);
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [LastLineHook]);
-
-  const addHomeMarker = (location: GoogleLatLng): GoogleMarker => {
-    const homeMarkerConst: GoogleMarker = new google.maps.Marker({
-      position: location,
-      map: map,
-    });
-
-    homeMarkerConst.addListener("click", () => {
-      map?.panTo(location);
-      map?.setZoom(6);
-    });
-
-    return homeMarkerConst;
-  };
-
-  const getIconAttributes = (iconColor: string) => {
-    return {
-      path: "M11.0639 15.3003L26.3642 2.47559e-05L41.6646 15.3003L26.3638 51.3639L11.0639 15.3003 M22,17.5a4.5,4.5 0 1,0 9,0a4.5,4.5 0 1,0 -9,0Z",
-      fillColor: iconColor,
-      fillOpacity: 0.8,
-      strokeColor: "pink",
-      strokeWeight: 2,
-      anchor: new google.maps.Point(30, 50),
-    };
-  };
-
-  const initMap = (zoomLevel: number, address: GoogleLatLng): void => {
-    const target = ref.current;
-    if (target) {
-      google.maps.event.addDomListener(window, "load", () => {
-        setMap(
-          new google.maps.Map(target, {
-            zoom: zoomLevel,
-            center: address,
-            mapTypeControl: mapTypeControl,
-            streetViewControl: false,
-            rotateControl: false,
-            scaleControl: true,
-            fullscreenControl: false,
-            panControl: false,
-            zoomControl: true,
-            gestureHandling: "cooperative",
-            mapTypeId: mapType,
-            draggableCursor: "pointer",
-          })
-        );
-      });
-    }
-  };
-
   return (
-    <div className={styles.mapContainer}>
-      <div ref={ref} className={styles.myMap}></div>
-    </div>
+    <>
+      <div ref={ref} style={style} />
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, { map });
+        }
+      })}
+    </>
   );
 };
 
-export default Map;
+const Marker: React.FC<google.maps.MarkerOptions> = (options) => {
+  const [marker, setMarker] = React.useState<google.maps.Marker>();
+
+  React.useEffect(() => {
+    if (!marker) {
+      setMarker(new google.maps.Marker());
+    }
+
+    // remove marker from map on unmount
+    return () => {
+      if (marker) {
+        marker.setMap(null);
+      }
+    };
+  }, [marker]);
+
+  React.useEffect(() => {
+    if (marker) {
+      marker.setOptions(options);
+    }
+  }, [marker, options]);
+
+  return null;
+};
+
+const deepCompareEqualsForMaps = createCustomEqual((deepEqual) => (a: any, b: any) => {
+  if (isLatLngLiteral(a) || a instanceof google.maps.LatLng || isLatLngLiteral(b) || b instanceof google.maps.LatLng) {
+    return new google.maps.LatLng(a).equals(new google.maps.LatLng(b));
+  }
+
+  return deepEqual(a, b);
+});
+
+function useDeepCompareMemoize(value: any) {
+  const ref = React.useRef();
+
+  if (!deepCompareEqualsForMaps(value, ref.current)) {
+    ref.current = value;
+  }
+
+  return ref.current;
+}
+
+function useDeepCompareEffectForMaps(callback: React.EffectCallback, dependencies: any[]) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(callback, dependencies.map(useDeepCompareMemoize));
+}
+
+function isLatLngLiteral(obj: any): obj is google.maps.LatLngLiteral {
+  return typeof obj === "object" && Number.isFinite(obj.lat) && Number.isFinite(obj.lng);
+}
+
+export { Map, Marker };
