@@ -10,8 +10,8 @@ type Props = {
   setCenter: (param: google.maps.LatLngLiteral) => void;
 };
 
+let mapPolygon: google.maps.Polygon;
 const GoogleMap = ({ markerList, center, setMarkerList, setCenter }: Props) => {
-  // const initLatLng = new google.maps.LatLng(initMarker.lat, initMarker.lng);
   const [zoom, setZoom] = useState(12);
 
   const render = (status: Status) => {
@@ -27,31 +27,45 @@ const GoogleMap = ({ markerList, center, setMarkerList, setCenter }: Props) => {
     setCenter(m.getCenter()!.toJSON());
   };
 
-  const drawPolygon = ({map}:{map:google.maps.Map}) => {
-    const transformData = markerList.map(item => {
+  const handleDrawPolygon = ({ map }: { map: google.maps.Map }) => {
+    const transformData = markerList.map((item) => {
       const { lat, lng } = item.toJSON();
       return [lat, lng];
     });
     const convexHullData = grahamScan2(transformData) as number[][];
     if (convexHullData.length > 3) {
-      const bermudaTriangle = new google.maps.Polygon({
-        paths: convexHullData.map(item => {
+      const drawPolygon = new google.maps.Polygon({
+        paths: convexHullData.map((item) => {
           const [lat, lng] = item;
-          return {lat, lng}
+          return { lat, lng };
         }),
         strokeColor: "#FF0000",
         strokeOpacity: 0.8,
         strokeWeight: 2,
-        fillOpacity: 0.35,
       });
-      bermudaTriangle.setMap(map);
+      mapPolygon = drawPolygon;
+      drawPolygon.setMap(map);
       setMarkerList([]);
+    }
+  };
+
+  const handleFillColor = () => {
+    if (mapPolygon) {
+      mapPolygon.setOptions({ fillColor: "blue" });
     }
   };
 
   return (
     <Wrapper apiKey={""} render={render}>
-      <Map center={center} onClick={onClick} onIdle={onIdle} onRightClick={drawPolygon} zoom={zoom} style={{ flexGrow: "1", height: "100%" }}>
+      <Map
+        center={center}
+        onClick={onClick}
+        onIdle={onIdle}
+        onRightClick={handleDrawPolygon}
+        onFillColor={handleFillColor}
+        zoom={zoom}
+        style={{ flexGrow: "1", height: "100%" }}
+      >
         {markerList.map((latLng, i) => (
           <Marker key={i} position={latLng} />
         ))}

@@ -1,17 +1,19 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createCustomEqual } from "fast-equals";
+import styles from "./Map.module.scss";
 interface MapProps extends google.maps.MapOptions {
   style: { [key: string]: string };
   onClick?: (e: google.maps.MapMouseEvent) => void;
   onRightClick?: ({ map }: { map: google.maps.Map }) => void;
   onIdle?: (map: google.maps.Map) => void;
+  onFillColor?: () => void;
 }
 
-const Map: React.FC<MapProps> = ({ onClick, onIdle, onRightClick, children, style, ...options }) => {
-  const ref = React.useRef<HTMLDivElement>(null);
-  const [map, setMap] = React.useState<google.maps.Map>();
+const Map: React.FC<MapProps> = ({ onClick, onIdle, onRightClick, onFillColor, children, style, ...options }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<google.maps.Map>();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (ref.current && !map) {
       setMap(new window.google.maps.Map(ref.current, {}));
     }
@@ -23,7 +25,7 @@ const Map: React.FC<MapProps> = ({ onClick, onIdle, onRightClick, children, styl
     }
   }, [map, options]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (map) {
       ["click", "idle", "mousedown"].forEach((eventName) => google.maps.event.clearListeners(map, eventName));
 
@@ -44,6 +46,19 @@ const Map: React.FC<MapProps> = ({ onClick, onIdle, onRightClick, children, styl
       }
     }
   }, [map, onClick, onIdle, onRightClick]);
+
+  useEffect(() => {
+    if (map) {
+      const fillButton = document.createElement("button");
+      fillButton.textContent = "Fill Color";
+      fillButton.classList.add(styles.customButton);
+      fillButton.addEventListener("click", () => {
+        onFillColor && onFillColor();
+      });
+      map.controls[google.maps.ControlPosition.TOP_RIGHT].push(fillButton);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
 
   return (
     <>
